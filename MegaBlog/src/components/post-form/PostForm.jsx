@@ -1,6 +1,6 @@
 import React , {useCallback} from 'react'
 import { useForm } from 'react-hook-form'
-import {Button , Input , Select , RTE} from '../'
+import {Button , Input , Select , RTE} from '..'
 import appwriteService from '../../appwrite/config'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -18,11 +18,13 @@ export default function PostForm({post}) {
         })
 
         const navigate=useNavigate()
-        const userData= useSelector( state => state.user.userData)
+        const userData= useSelector( state => state.auth ?.userData)
 
         const submit= async (data) =>{
+          console.log('User Data:', userData);  // Log userData to ensure it's present
+          console.log('Data before submission:', data);
           if(post){
-          const file = data.image[0] ? appwriteService.uploadFile(data.image[0]) : null
+          const file = data.image[0] ?await appwriteService.uploadFile(data.image[0]) : null
 
           if(file){
             appwriteService.deleteFile(post.featuredImage)
@@ -40,9 +42,10 @@ export default function PostForm({post}) {
             if(file){
             const fileId = file.$id
             data.featuredImage=fileId
+            console.log('Data with userId:', data);
            const dbPost = await appwriteService.createPost({
               ...data ,
-              userId:userData.$id ,
+              userId:userData ?.$id ,
             });
             if(dbPost){
               navigate(`/post/${dbPost.$id}`)
@@ -65,10 +68,9 @@ export default function PostForm({post}) {
     React.useEffect(() =>{
       const subscription= watch((value, {name}) =>{
         if(name === 'title') {
-          setValue('slug' , slugTransform(value.title,
+          setValue('slug' , slugTransform(value.title),
           {shouldValidate: true}
-          ))
-        }
+          )}
       })
       
       return () => subscription.unsubscribe();
@@ -117,7 +119,7 @@ export default function PostForm({post}) {
             className="mb-4"
             {...register("status", { required: true })}
         />
-        <Button type="submit" bgColor={post ? "bg-green-500" : undefined} className="w-full">
+        <Button type="submit" bgcolor={post ? "bg-green-500" : undefined} className="w-full">
             {post ? "Update" : "Submit"}
         </Button>
     </div>
